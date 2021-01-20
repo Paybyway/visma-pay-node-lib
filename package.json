@@ -1,0 +1,26 @@
+{
+  "name": "visma-pay",
+  "version": "1.0.0",
+  "description": "Vismay Pay library",
+  "main": "lib/payment.js",
+  "scripts": {
+    "test": "node tests/test_runner.js"
+  },
+  "keywords": [
+    "visma",
+    "visma pay",
+    "payment"
+  ],
+  "author": "Visma Pay (https://www.visma.fi/vismapay)",
+  "dependencies": {
+    "crypto-js": "^3.1.2-5"
+  },
+  "devDependencies": {
+    "nock": "^10.0.0",
+    "qunit": "^1.0.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Paybyway/visma-pay-node-lib"
+  }
+}
