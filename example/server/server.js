@@ -1,30 +1,22 @@
 // Express package is required for this example
-var express = require('express');
-//var sys = require('sys');
-var url = require('url');
-var fs = require('fs');
-var querystring = require('querystring');
+const express = require('express');
+const app = express();
 
-var app = express();
-var router = express.Router();
-
-var webProtocol = require('http');
-var server = webProtocol.createServer(app);
-
-var vismaPay = require("../../lib/payment.js");
+const vismaPay = require("../../lib/vismapay.js");
 
 // Set private key and api key
-vismaPay.setPrivateKey('');
-vismaPay.setApiKey('');
+vismaPay.setPrivateKey(process.env.VISMAPAY_PRIVATE_KEY || '');
+vismaPay.setApiKey(process.env.VISMAPAY_API_KEY || '');
 
-var orderCounter = 1;
+let orderCounter = 1;
 
-router.get('/', express.static(__dirname + '/../page'));
+console.log('dn', __dirname);
+app.use('/', express.static(__dirname + '/../public'));
 
-router.get('/create-charge/:selected?', function(req, res) {
-	var selected = typeof req.params.selected !== 'undefined' ? req.params.selected : null;
+app.get('/create-charge/:selected?', function(req, res) {
+	const selected = typeof req.params.selected !== 'undefined' ? req.params.selected : null;
 
-	var chargeObject = {
+	const chargeObject = {
 		amount: 100,
 		order_number: 'test-order-' + (orderCounter++) + '-' + new Date().getTime(), // Order number shall be unique for every order
 		currency: 'EUR',
@@ -70,87 +62,92 @@ router.get('/create-charge/:selected?', function(req, res) {
 	if(selected)
 		chargeObject.payment_method.selected = [selected];
 
-	vismaPay.createCharge(chargeObject, function(error, charge, result) {
+	vismaPay.createCharge(chargeObject)
+	.then(result => {
+		console.log('createCharge response:', result);
+		let token = '';
+		if(result.result == 0) {
+			console.log("Got token = " + result.token + " for charge = " + chargeObject.order_number);
+			token = result.token;
+		}
 
-		console.log('createCharge response: ', result);
-
-		var token = "";
-		if(error) {
-			console.log("Error: " + error.message);
+		if(token !== "") {
+			res.redirect(vismaPay.apiUrl + '/token/' + token);
+		} else {
 			res.status(500);
-		}
-		else {
-			// A payment token is returned in a successful response
-			if(result.result == 0) {
-				console.log("Got token = " + result.token + " for charge = " + charge.order_number);
-				token = result.token;
-			}
-		}
-
-		if(token !== "")
-			res.redirect(vismaPay.apiUrl + 'token/' + token);
-		else
 			res.end('Something went wrong when creating a charge.');
-	});
+		}
+	})
+	.catch(err => {
+		console.error(err);
+		res.status(500);
+		res.end('Something went wrong when creating a charge.');
+	})
 });
 
-router.get('/e-payment-return', function(req, res) {
+app.get('/e-payment-return', function(req, res) {
 	console.log('E-payment return, params:', req.query);
 
-	vismaPay.checkReturn(req.query, function(error, result) {
-
-		var message = '<html><body><p>';
-
-		if(error)
+	vismaPay.checkReturn(req.query)
+	.then(ok => {
+		console.log('OK result:', ok);
+		res.status(200);
+		res.end('<html><body><p>Payment was successful for order number: ' + req.query.ORDER_NUMBER + '</p><a href="/">Start again</a></body></html>');
+	})
+	.catch(err => {
+		console.error(err);
+		res.status(500);
+		let message = '<html><body><p>';
+		switch(req.query.RETURN_CODE)
 		{
-			console.log("Got error: " + error.message);
-			message += error.message;
-			res.status(500);
+			case '1':
+				message += 'Payment failed!';
+				break;
+			case '4':
+				message += 'Transaction status could not be updated after customer returned from the web page of a bank.';
+				break;
+			case '10':
+				message += 'Maintence break';
+				break;
+			default:
+				message += 'Unknown return value';
 		}
-		else
-		{
-			switch(result.RETURN_CODE)
-			{
-				case '0':
-					message += 'Payment was successful for order number: ' + result.ORDER_NUMBER;
-					break;
-				case '4':
-					message += 'Transaction status could not be updated after customer returned from the web page of a bank.';
-					break;
-				case '10':
-					message += 'Maintence break';
-					break;
-				case '1':
-					message += 'Payment failed!';
-					break;
-				default:
-					message += 'Unknown return value';
-			}
-		}
-
 		message += '</p><a href="/">Start again</a></body></html>';
 		res.end(message);
 	});
 });
 
-router.get('/e-payment-notify', function(req, res) {
+app.get('/e-payment-notify', function(req, res) {
 	console.log('Got notify, params:', req.query);
 
-	vismaPay.checkReturn(req.query, function(error, result) {
-
-		if(error)
-			console.log("Got error: " + error.message);
-		else
-			console.log("Return code = " + result.RETURN_CODE + " for order number = " + result.ORDER_NUMBER);
+	vismaPay.checkReturn(req.query)
+	.then(ok => {
+		console.log('Got successful result:', ok);
+	})
+	.catch(err => {
+		console.error('Got error result:', err);
+	})
+	.finally(() => {
+		res.end('');
 	});
-
-	res.end('');
 });
 
-router.get('/get-merchant-payment-methods', function(req, res) {
+app.get('/get-merchant-payment-methods', function(req, res) {
+	vismaPay.getMerchantPaymentMethods('EUR')
+	.then(result => {
+		console.log('Payment methods result:', result);
+		res.end(JSON.stringify(result.payment_methods));
+	})
+	.catch(err => {
+		console.error(err);
+		res.status(500);
+		res.end('');
+	});
+
+
 	vismaPay.getMerchantPaymentMethods("", function(error, currency, result) {
 		
-		var response = '';
+		let response = '';
 
 		if(error)
 		{
@@ -171,8 +168,7 @@ router.get('/get-merchant-payment-methods', function(req, res) {
 	});
 });
 
-app.use(router);
-var port = 8000;
-server.listen(port);
-
-console.log("Server running at port " + port);
+const port = 3000;
+app.listen(port, () => {
+  console.log(`Example app listening at http://localhost:${port}`)
+});

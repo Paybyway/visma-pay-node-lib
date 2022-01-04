@@ -1,10 +1,12 @@
 {
   "name": "visma-pay",
-  "version": "1.0.0",
-  "description": "Vismay Pay library",
-  "main": "lib/payment.js",
+  "version": "2.0.0",
+  "description": "Visma Pay library",
+  "main": "lib/vismapay.js",
   "scripts": {
-    "test": "node tests/test_runner.js"
+    "lint": "eslint .",
+    "test": "npm run lint && jest tests",
+    "run-example": "node example/server/server.js"
   },
   "keywords": [
     "visma",
@@ -13,11 +15,30 @@
   ],
   "author": "Visma Pay (https://www.visma.fi/vismapay)",
   "dependencies": {
-    "crypto-js": "^3.1.2-5"
+    "bluebird": "^3.7.2",
+    "crypto-js": "^3.1.2-5",
+    "node-fetch": "^2.6.1"
   },
   "devDependencies": {
-    "nock": "^10.0.0",
-    "qunit": "^1.0.0"
+    "babel-eslint": "^10.1.0",
+    "eslint": "^8.4.1",
+    "jest": "^27.4.5",
+    "nock": "^13.2.1"
+  },
+  "eslintConfig": {
+    "root": true,
+    "env": {
+      "node": true,
+      "es2021": true,
+      "jest": true
+    },
+    "extends": [
+      "eslint:recommended"
+    ],
+    "parserOptions": {
+      "parser": "babel-eslint"
+    },
+    "rules": {}
   },
   "repository": {
     "type": "git",
