@@ -360,7 +360,7 @@ test('get refund', () => {
   return expect(vismapay.getRefund(123)).resolves.toHaveProperty('result', 0);
 });
 
-test('get refund', () => {
+test('create refund', () => {
   const response = {
     result: 0
   };
