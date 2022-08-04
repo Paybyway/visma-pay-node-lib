@@ -1,6 +1,6 @@
 {
   "name": "visma-pay",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "Visma Pay library",
   "main": "lib/vismapay.js",
   "scripts": {
