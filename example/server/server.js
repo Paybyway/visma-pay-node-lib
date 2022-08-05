@@ -3,6 +3,7 @@ const express = require('express');
 const app = express();
 
 const vismaPay = require("../../lib/vismapay.js");
+const helpers = require("../helpers/common");
 
 // Set private key and api key
 vismaPay.setPrivateKey(process.env.VISMAPAY_PRIVATE_KEY || '');
@@ -85,36 +86,28 @@ app.get('/create-charge/:selected?', function(req, res) {
 	})
 });
 
-app.get('/e-payment-return', function(req, res) {
+app.get('/e-payment-return', async function(req, res) {
 	console.log('E-payment return, params:', req.query);
 
-	vismaPay.checkReturn(req.query)
-	.then(ok => {
-		console.log('OK result:', ok);
-		res.status(200);
-		res.end('<html><body><p>Payment was successful for order number: ' + req.query.ORDER_NUMBER + '</p><a href="/">Start again</a></body></html>');
-	})
-	.catch(err => {
-		console.error(err);
-		res.status(500);
-		let message = '<html><body><p>';
-		switch(req.query.RETURN_CODE)
-		{
-			case '1':
-				message += 'Payment failed!';
-				break;
-			case '4':
-				message += 'Transaction status could not be updated after customer returned from the web page of a bank.';
-				break;
-			case '10':
-				message += 'Maintence break';
-				break;
-			default:
-				message += 'Unknown return value';
+	try {
+		const result = await vismaPay.checkReturn(req.query);
+
+		if (req.query.RETURN_CODE === '0') {
+			console.log('OK result:', result);
+			res.status(200);
+			res.end(`<html><body><p>Payment was successful for order number: ${req.query.ORDER_NUMBER}</p><a href="/">Start again</a></body></html>`);
 		}
-		message += '</p><a href="/">Start again</a></body></html>';
-		res.end(message);
-	});
+		else {
+			res.status(500);
+			const errorMessage = helpers.getErrorMessageFromReturnCode(req.query.RETURN_CODE);
+			console.error(errorMessage);
+			res.end(`<html><body><p></p>${errorMessage}</p><a href="/">Start again</a></body></html>`);
+		}
+	} catch (error) {
+		console.error(error);
+		res.status(500);
+		res.end(`<html><body><p>${error.errCode2Text(error.type)}</p><a href="/">Start again</a></body></html>`);
+	}
 });
 
 app.get('/e-payment-notify', function(req, res) {
@@ -142,29 +135,6 @@ app.get('/get-merchant-payment-methods', function(req, res) {
 		console.error(err);
 		res.status(500);
 		res.end('');
-	});
-
-
-	vismaPay.getMerchantPaymentMethods("", function(error, currency, result) {
-		
-		let response = '';
-
-		if(error)
-		{
-			console.log("Got error: " + error.message);
-			res.status(500)
-		}
-		else if(result.result !== 0)
-		{
-			console.log("Unable to get merchant payment methods");
-			res.status(500)
-		}
-		else
-		{
-			response = JSON.stringify(result.payment_methods);
-		}
-
-		res.end(response);
 	});
 });
 

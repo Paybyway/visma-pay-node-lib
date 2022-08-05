@@ -3,7 +3,7 @@ Visma Pay Node Library
 
 See documentation at https://www.vismapay.com/docs/web_payments/
 
-Tested with node `v14.18.1`
+Tested with node `v16.14.2`
 
 Installation
 ------------
