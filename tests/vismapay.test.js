@@ -18,16 +18,16 @@ const unSetKeys = () => {
   vismapay.setPrivateKey('');
 };
 
-test('createCharge without privatekey or apikey set', () => {
+test('createCharge without privatekey or apikey set', async () => {
   unSetKeys();
-  expect(vismapay.createCharge({})).rejects.toHaveProperty('type', 2);
+  await expect(vismapay.createCharge({})).rejects.toHaveProperty('type', 2);
 });
 
-test('createCharge without charge', () => {
-  expect(vismapay.createCharge({})).rejects.toHaveProperty('type', 3);
+test('createCharge without charge', async () => {
+  await expect(vismapay.createCharge({})).rejects.toHaveProperty('type', 3);
 });
 
-test('createCharge returns a token with minimal params', () => {
+test('createCharge returns a token with minimal params', async () => {
   const response = {
     result: 0,
     token: "the_token",
@@ -36,7 +36,7 @@ test('createCharge returns a token with minimal params', () => {
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.createCharge({
+  await expect(vismapay.createCharge({
     amount: 1337,
     order_number: 'test-order-' + new Date().getTime(),
     currency: 'EUR',
@@ -50,7 +50,7 @@ test('createCharge returns a token with minimal params', () => {
   })).resolves.toHaveProperty('token', 'the_token');
 });
 
-test('createCharge returns a token when all params are provided', () => {
+test('createCharge returns a token when all params are provided', async () => {
   const response = {
     result: 0,
     token: "the_token_2",
@@ -59,7 +59,7 @@ test('createCharge returns a token when all params are provided', () => {
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.createCharge({
+  await expect(vismapay.createCharge({
     order_number: 'order3',
     currency: 'EUR',
     payment_method: {
@@ -86,10 +86,10 @@ test('createCharge returns a token when all params are provided', () => {
   })).resolves.toHaveProperty('token', 'the_token_2');
 });
 
-test('createCharge with error response', () => {
+test('createCharge with error response', async () => {
   const response = {
     result: 1,
-    errors: [  
+    errors: [
       "The amount must be an integer.",
       "The contact.email format is invalid.",
       "The product.price sum does not match with the total amount."
@@ -111,22 +111,20 @@ test('createCharge with error response', () => {
     }
   });
 
-  Promise.all([
-    expect(cc).rejects.toHaveProperty('type', 6),
-    expect(cc).rejects.toHaveProperty('result.result', 1),
-  ]);
+  await expect(cc).rejects.toHaveProperty('type', 6);
+  await expect(cc).rejects.toHaveProperty('result.result', 1);
 });
 
-test('checkStatusWithToken without keys', () => {
+test('checkStatusWithToken without keys', async () => {
   unSetKeys();
-  expect(vismapay.checkStatusWithToken('token')).rejects.toHaveProperty('type', 2);
+  await expect(vismapay.checkStatusWithToken('token')).rejects.toHaveProperty('type', 2);
 });
 
-test('checkStatusWithToken without token', () => {
-  expect(vismapay.checkStatusWithToken('')).rejects.toHaveProperty('type', 3);
+test('checkStatusWithToken without token', async () => {
+  await expect(vismapay.checkStatusWithToken('')).rejects.toHaveProperty('type', 3);
 });
 
-test('checkStatusWithToken success', () => {
+test('checkStatusWithToken success', async () => {
   const response = {
     result: 0,
     settled: 1,
@@ -137,19 +135,19 @@ test('checkStatusWithToken success', () => {
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.checkStatusWithToken('token')).resolves.toHaveProperty('settled', 1);
+  await expect(vismapay.checkStatusWithToken('token')).resolves.toHaveProperty('settled', 1);
 });
 
-test('checkStatusWithOrderNumber without keys', () => {
+test('checkStatusWithOrderNumber without keys', async () => {
   unSetKeys();
-  expect(vismapay.checkStatusWithOrderNumber('token')).rejects.toHaveProperty('type', 2);
+  await expect(vismapay.checkStatusWithOrderNumber('token')).rejects.toHaveProperty('type', 2);
 });
 
-test('checkStatusWithOrderNumber without order_num', () => {
-  expect(vismapay.checkStatusWithOrderNumber('')).rejects.toHaveProperty('type', 3);
+test('checkStatusWithOrderNumber without order_num', async () => {
+  await expect(vismapay.checkStatusWithOrderNumber('')).rejects.toHaveProperty('type', 3);
 });
 
-test('checkStatusWithOrderNumber success', () => {
+test('checkStatusWithOrderNumber success', async () => {
   const response = {
     result: 0,
     settled: 1,
@@ -160,14 +158,14 @@ test('checkStatusWithOrderNumber success', () => {
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.checkStatusWithOrderNumber('ord_num')).resolves.toHaveProperty('settled', 1);
+  await expect(vismapay.checkStatusWithOrderNumber('ord_num')).resolves.toHaveProperty('settled', 1);
 });
 
-test('capture gives error with no order_number', () => {
-  expect(vismapay.capture('')).rejects.toHaveProperty('type', 3);
+test('capture gives error with no order_number', async () => {
+  await expect(vismapay.capture('')).rejects.toHaveProperty('type', 3);
 });
 
-test('capture fails if not successful response', () => {
+test('capture fails if not successful response', async () => {
   const response = {
     result: 1
   };
@@ -176,28 +174,26 @@ test('capture fails if not successful response', () => {
 
   const c = vismapay.capture('123');
 
-  Promise.all([
-    expect(c).rejects.toHaveProperty('type', 6),
-    expect(c).rejects.toHaveProperty('result.result', 1)
-  ]);
+  await expect(c).rejects.toHaveProperty('type', 6);
+  await expect(c).rejects.toHaveProperty('result.result', 1);
 });
 
-test('capture success', () => {
+test('capture success', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.capture('123')).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.capture('123')).resolves.toHaveProperty('result', 0);
 });
 
 
-test('cancel gives error with no order_number', () => {
-  expect(vismapay.cancel('')).rejects.toHaveProperty('type', 3);
+test('cancel gives error with no order_number', async () => {
+  await expect(vismapay.cancel('')).rejects.toHaveProperty('type', 3);
 });
 
-test('cancel fails if not successful response', () => {
+test('cancel fails if not successful response', async () => {
   const response = {
     result: 1
   };
@@ -206,23 +202,21 @@ test('cancel fails if not successful response', () => {
 
   const c = vismapay.cancel('123');
 
-  Promise.all([
-    expect(c).rejects.toHaveProperty('type', 6),
-    expect(c).rejects.toHaveProperty('result.result', 1)
-  ]);
+  await expect(c).rejects.toHaveProperty('type', 6);
+  await expect(c).rejects.toHaveProperty('result.result', 1);
 });
 
-test('cancel success', () => {
+test('cancel success', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.cancel('123')).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.cancel('123')).resolves.toHaveProperty('result', 0);
 });
 
-test('get card token', () => {
+test('get card token', async () => {
   const response = {
     result: 0,
     source: {
@@ -238,26 +232,24 @@ test('get card token', () => {
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
   const gct = vismapay.getCardToken('card-123');
-  Promise.all([
-    expect(gct).resolves.toHaveProperty('result', 0),
-    expect(gct).resolves.toHaveProperty('source.card_token', 'card-123')
-  ]);
+  await expect(gct).resolves.toHaveProperty('result', 0);
+  await expect(gct).resolves.toHaveProperty('source.card_token', 'card-123');
 
   expect(hmacSpy).toHaveReturnedWith('8FD80DB663871A0977D019465A5EADA4FF636582C7F6E09E1DED7D1D9566D963');
 });
 
-test('delete card token', () => {
+test('delete card token', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.deleteCardToken('card-123')).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.deleteCardToken('card-123')).resolves.toHaveProperty('result', 0);
   expect(hmacSpy).toHaveReturnedWith('8FD80DB663871A0977D019465A5EADA4FF636582C7F6E09E1DED7D1D9566D963');
 });
 
-test('check return with params OK Settled', () => {
+test('check return with params OK Settled', async () => {
   const params = {
     RETURN_CODE: 0,
     ORDER_NUMBER: '123',
@@ -265,10 +257,10 @@ test('check return with params OK Settled', () => {
     AUTHCODE: 'E5CD8307975FE9DA10C391EB47E48E47CBBA2A171C187E35782B920F268ECFC9'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with params OK not Settled', () => {
+test('check return with params OK not Settled', async () => {
   const params = {
     RETURN_CODE: 0,
     ORDER_NUMBER: '123',
@@ -276,10 +268,10 @@ test('check return with params OK not Settled', () => {
     AUTHCODE: '5F7B2BBE36C952C7DF6E75577538ABA01AD871B384E8F8636A740F08E0D95724'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with params OK Settled contact id', () => {
+test('check return with params OK Settled contact id', async () => {
   const params = {
     RETURN_CODE: 0,
     ORDER_NUMBER: '123',
@@ -288,10 +280,10 @@ test('check return with params OK Settled contact id', () => {
     AUTHCODE: '02BAD88FA52FE5FBE9FA16EDB5313FE9690D03DDCF476F0FBFFAD502CE2A64FF'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with params OK not Settled contact id', () => {
+test('check return with params OK not Settled contact id', async () => {
   const params = {
     RETURN_CODE: 0,
     ORDER_NUMBER: '123',
@@ -300,20 +292,20 @@ test('check return with params OK not Settled contact id', () => {
     AUTHCODE: '5866C52ADEEA44EB1B04CA1EA840F5F97B92D337340DC5F2ED1B701DA8BF1150'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with params FAILED', () => {
+test('check return with params FAILED', async () => {
   const params = {
     RETURN_CODE: 1,
     ORDER_NUMBER: '123',
     AUTHCODE: 'AF870E7BA31BC7A413E5FF24C6DA3CDBA1BF542EF591357CAD98B16662BFCF1F'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with params FAILED incident id', () => {
+test('check return with params FAILED incident id', async () => {
   const params = {
     RETURN_CODE: 1,
     ORDER_NUMBER: '123',
@@ -321,64 +313,71 @@ test('check return with params FAILED incident id', () => {
     AUTHCODE: '98F6866F50BC63B27B170E44134BE2B692FCEF1E3391D7785BFFEBAB3CFB301B'
   };
 
-  expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
+  await expect(vismapay.checkReturn(params)).resolves.toBeTruthy();
 });
 
-test('check return with invalid MAC', () => {
-  const params = {
+test('check return with invalid MAC', async () => {
+  const base = {
     RETURN_CODE: 0,
     ORDER_NUMBER: '123',
     SETTLED: 1,
+  };
+
+  await expect(vismapay.checkReturn({
+    ...base,
+    AUTHCODE: 'invalid'
+  })).rejects.toHaveProperty('type', 5);
+
+  await expect(vismapay.checkReturn({
+    ...base,
     AUTHCODE: '98F6866F50BC63B27B170E44134BE2B692FCE81E3391D7785BFFEBAB3CFB301D'
-  };
-
-  expect(vismapay.checkReturn(params)).rejects.toHaveProperty('type', 5);
+  })).rejects.toHaveProperty('type', 5);
 });
 
-test('get payment', () => {
+test('get payment', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.getPayment('ord_num')).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.getPayment('ord_num')).resolves.toHaveProperty('result', 0);
 });
 
-test('get refund', () => {
+test('get refund', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.getRefund(123)).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.getRefund(123)).resolves.toHaveProperty('result', 0);
 });
 
-test('create refund', () => {
+test('create refund', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.createRefund({
+  await expect(vismapay.createRefund({
     order_number: 'ord_num',
     amount: 120
   })).resolves.toHaveProperty('result', 0);
 });
 
-test('cancel refund', () => {
+test('cancel refund', async () => {
   const response = {
     result: 0
   };
 
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
-  expect(vismapay.cancelRefund(123)).resolves.toHaveProperty('result', 0);
+  await expect(vismapay.cancelRefund(123)).resolves.toHaveProperty('result', 0);
 });
 
-test('get merchant payment methods', () => {
+test('get merchant payment methods', async () => {
   const response = {
     result: 0,
     payment_methods: [
@@ -391,20 +390,33 @@ test('get merchant payment methods', () => {
   fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
 
   const mpm = vismapay.getMerchantPaymentMethods('EUR');
-  Promise.all([
-    expect(mpm).resolves.toHaveProperty('result', 0),
-    expect(mpm).resolves.toHaveProperty('payment_methods[0].name', 'dummy')
-  ]);
+  await expect(mpm).resolves.toHaveProperty('result', 0);
+  await expect(mpm).resolves.toHaveProperty('payment_methods[0].name', 'dummy');
 
   expect(hmacSpy).toHaveReturnedWith('CF0552506D3736E30FAC8AB39200A9FCC81C630AEFAE4732759F37880282585E');
 });
 
-test('class export', () => {
-  const vpay = new vismapayClass();
-  expect(vpay.createCharge({})).rejects.toHaveProperty('type', 2);
+test('get merchant payment methods with channel sub merchant ids', async () => {
+  const response = {
+    result: 0,
+    payment_methods: [{ name: 'dummy' }]
+  };
+
+  fetch.mockResponseOnce(JSON.stringify(response), { status: 200 });
+
+  const result = await vismapay.getMerchantPaymentMethods('EUR', ['1', '2']);
+  expect(result).toHaveProperty('result', 0);
+
+  const body = JSON.parse(fetch.mock.calls[fetch.mock.calls.length - 1][1].body);
+  expect(body.channel_sub_merchant_ids).toEqual(['1', '2']);
 });
 
-test('charge card token', () => {
+test('class export', async () => {
+  const vpay = new vismapayClass();
+  await expect(vpay.createCharge({})).rejects.toHaveProperty('type', 2);
+});
+
+test('charge card token', async () => {
   const response = {
     result: 0,
     settled: 1
@@ -419,15 +431,13 @@ test('charge card token', () => {
     card_token: 'asd4005-123'
   });
 
-  Promise.all([
-    expect(cct).resolves.toHaveProperty('result', 0),
-    expect(cct).resolves.toHaveProperty('settled', 1)
-  ]);
+  await expect(cct).resolves.toHaveProperty('result', 0);
+  await expect(cct).resolves.toHaveProperty('settled', 1);
 
   expect(hmacSpy).toHaveReturnedWith('6A012908616C06BE12FC95DD4962942FC9F78D96DE2A38E28A573DCAA8BF7968');
 });
 
-test('charge card token CIT', () => {
+test('charge card token CIT', async () => {
   const response = {
     result: 30,
     verify: {
@@ -450,11 +460,9 @@ test('charge card token CIT', () => {
     }
   });
 
-  Promise.all([
-    expect(cct).rejects.toHaveProperty('type', 6),
-    expect(cct).rejects.toHaveProperty('result.result', 30),
-    expect(cct).rejects.toHaveProperty('result.verify.token', 'test_token')
-  ]);
+  await expect(cct).rejects.toHaveProperty('type', 6);
+  await expect(cct).rejects.toHaveProperty('result.result', 30);
+  await expect(cct).rejects.toHaveProperty('result.verify.token', 'test_token');
 
   expect(hmacSpy).toHaveReturnedWith('6A012908616C06BE12FC95DD4962942FC9F78D96DE2A38E28A573DCAA8BF7968');
 });
